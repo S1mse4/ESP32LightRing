@@ -175,7 +175,7 @@ void setup()
 
   // Initialize LED ring
   FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
-  FastLED.setBrightness(128);
+  FastLED.setBrightness(BRIGHTNESS);
   fill_solid(leds, NUM_LEDS, CRGB::Black);
   FastLED.show();
 
