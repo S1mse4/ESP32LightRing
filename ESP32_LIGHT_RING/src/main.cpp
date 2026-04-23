@@ -3,7 +3,7 @@
 #include <WebServer.h>
 #include <DNSServer.h>
 #include <ESPmDNS.h>
-#include <FastLED.h>
+#include <Adafruit_NeoPixel.h>
 #include "config.h"
 
 // Access Point credentials
@@ -13,9 +13,9 @@ const char *AP_PASSWORD = "lightring"; // min 8 characters, set to "" for open n
 // mDNS hostname - reachable as "light-ring.local" when connected to the AP
 const char *MDNS_HOSTNAME = "light-ring";
 
-CRGB leds[NUM_LEDS];
+Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_PIXEL_TYPE);
 bool ledsOn = false;
-CRGB currentColor = CRGB::White;
+uint8_t currentR = 255, currentG = 255, currentB = 255;
 
 WebServer server(80);
 DNSServer dnsServer;
@@ -24,19 +24,23 @@ void applyLeds()
 {
   if (ledsOn)
   {
-    fill_solid(leds, NUM_LEDS, currentColor);
+    strip.fill(strip.Color(currentR, currentG, currentB));
   }
   else
   {
-    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    strip.fill(0);
   }
-  FastLED.show();
+  strip.show();
 }
 
 void handleRoot()
 {
   String onClass  = ledsOn ? "btn btn-on active" : "btn btn-on";
   String offClass = ledsOn ? "btn btn-off" : "btn btn-off active";
+
+  auto isSelected = [&](uint8_t r, uint8_t g, uint8_t b) -> bool {
+    return currentR == r && currentG == g && currentB == b;
+  };
 
   String html = R"rawhtml(<!DOCTYPE html>
 <html lang="en">
@@ -113,14 +117,14 @@ void handleRoot()
     </div>
     <div class="section-title">Color</div>
     <div class="color-grid">
-      <a href="/color?r=255&g=255&b=255" title="White"   style="background:#ffffff" class="color-btn)rawhtml" + (currentColor == CRGB(255,255,255) ? " selected" : "") + R"rawhtml("></a>
-      <a href="/color?r=255&g=0&b=0"     title="Red"     style="background:#ff0000" class="color-btn)rawhtml" + (currentColor == CRGB(255,0,0)     ? " selected" : "") + R"rawhtml("></a>
-      <a href="/color?r=0&g=255&b=0"     title="Green"   style="background:#00ff00" class="color-btn)rawhtml" + (currentColor == CRGB(0,255,0)     ? " selected" : "") + R"rawhtml("></a>
-      <a href="/color?r=0&g=0&b=255"     title="Blue"    style="background:#0000ff" class="color-btn)rawhtml" + (currentColor == CRGB(0,0,255)     ? " selected" : "") + R"rawhtml("></a>
-      <a href="/color?r=255&g=165&b=0"   title="Orange"  style="background:#ffa500" class="color-btn)rawhtml" + (currentColor == CRGB(255,165,0)   ? " selected" : "") + R"rawhtml("></a>
-      <a href="/color?r=255&g=255&b=0"   title="Yellow"  style="background:#ffff00" class="color-btn)rawhtml" + (currentColor == CRGB(255,255,0)   ? " selected" : "") + R"rawhtml("></a>
-      <a href="/color?r=0&g=255&b=255"   title="Cyan"    style="background:#00ffff" class="color-btn)rawhtml" + (currentColor == CRGB(0,255,255)   ? " selected" : "") + R"rawhtml("></a>
-      <a href="/color?r=255&g=0&b=255"   title="Magenta" style="background:#ff00ff" class="color-btn)rawhtml" + (currentColor == CRGB(255,0,255)   ? " selected" : "") + R"rawhtml("></a>
+      <a href="/color?r=255&g=255&b=255" title="White"   style="background:#ffffff" class="color-btn)rawhtml" + (isSelected(255,255,255) ? " selected" : "") + R"rawhtml("></a>
+      <a href="/color?r=255&g=0&b=0"     title="Red"     style="background:#ff0000" class="color-btn)rawhtml" + (isSelected(255,0,0)     ? " selected" : "") + R"rawhtml("></a>
+      <a href="/color?r=0&g=255&b=0"     title="Green"   style="background:#00ff00" class="color-btn)rawhtml" + (isSelected(0,255,0)     ? " selected" : "") + R"rawhtml("></a>
+      <a href="/color?r=0&g=0&b=255"     title="Blue"    style="background:#0000ff" class="color-btn)rawhtml" + (isSelected(0,0,255)     ? " selected" : "") + R"rawhtml("></a>
+      <a href="/color?r=255&g=165&b=0"   title="Orange"  style="background:#ffa500" class="color-btn)rawhtml" + (isSelected(255,165,0)   ? " selected" : "") + R"rawhtml("></a>
+      <a href="/color?r=255&g=255&b=0"   title="Yellow"  style="background:#ffff00" class="color-btn)rawhtml" + (isSelected(255,255,0)   ? " selected" : "") + R"rawhtml("></a>
+      <a href="/color?r=0&g=255&b=255"   title="Cyan"    style="background:#00ffff" class="color-btn)rawhtml" + (isSelected(0,255,255)   ? " selected" : "") + R"rawhtml("></a>
+      <a href="/color?r=255&g=0&b=255"   title="Magenta" style="background:#ff00ff" class="color-btn)rawhtml" + (isSelected(255,0,255)   ? " selected" : "") + R"rawhtml("></a>
     </div>
   </div>
 </body>
@@ -152,10 +156,9 @@ void handleColor()
     server.send(400, "text/plain", "Missing r, g, or b parameter");
     return;
   }
-  uint8_t r = (uint8_t)constrain(server.arg("r").toInt(), 0, 255);
-  uint8_t g = (uint8_t)constrain(server.arg("g").toInt(), 0, 255);
-  uint8_t b = (uint8_t)constrain(server.arg("b").toInt(), 0, 255);
-  currentColor = CRGB(r, g, b);
+  currentR = (uint8_t)constrain(server.arg("r").toInt(), 0, 255);
+  currentG = (uint8_t)constrain(server.arg("g").toInt(), 0, 255);
+  currentB = (uint8_t)constrain(server.arg("b").toInt(), 0, 255);
   if (ledsOn)
   {
     applyLeds();
@@ -174,10 +177,10 @@ void setup()
   Serial.begin(115200);
 
   // Initialize LED ring
-  FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
-  FastLED.setBrightness(BRIGHTNESS);
-  fill_solid(leds, NUM_LEDS, CRGB::Black);
-  FastLED.show();
+  strip.begin();
+  strip.setBrightness(BRIGHTNESS);
+  strip.fill(0);
+  strip.show();
 
   // Start Access Point
   WiFi.softAP(AP_SSID, AP_PASSWORD);
