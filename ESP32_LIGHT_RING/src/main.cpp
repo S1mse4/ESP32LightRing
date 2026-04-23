@@ -13,12 +13,6 @@ const char *AP_PASSWORD = "lightring"; // min 8 characters, set to "" for open n
 // mDNS hostname - reachable as "light-ring.local" when connected to the AP
 const char *MDNS_HOSTNAME = "light-ring";
 
-// WS2812B LED ring configuration
-#define LED_PIN     4
-#define NUM_LEDS    24
-#define LED_TYPE    WS2812B
-#define COLOR_ORDER GRB
-
 CRGB leds[NUM_LEDS];
 bool ledsOn = false;
 CRGB currentColor = CRGB::White;
