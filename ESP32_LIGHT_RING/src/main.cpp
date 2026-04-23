@@ -3,6 +3,7 @@
 #include <WebServer.h>
 #include <DNSServer.h>
 #include <ESPmDNS.h>
+#include "config.h"
 
 // Access Point credentials
 const char *AP_SSID = "ESP32-LightRing";
