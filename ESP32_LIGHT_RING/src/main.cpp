@@ -6,7 +6,7 @@
 
 // Access Point credentials
 const char *AP_SSID = "ESP32-LightRing";
-const char *AP_PASSWORD = "lightring";  // min 8 characters, set to "" for open network
+const char *AP_PASSWORD = "lightring"; // min 8 characters, set to "" for open network
 
 // mDNS hostname - reachable as "light-ring.local" when connected to the AP
 const char *MDNS_HOSTNAME = "light-ring";
@@ -14,15 +14,18 @@ const char *MDNS_HOSTNAME = "light-ring";
 WebServer server(80);
 DNSServer dnsServer;
 
-void handleRoot() {
+void handleRoot()
+{
   server.send(200, "text/html", "<html><body><h1>Hello World</h1></body></html>");
 }
 
-void handleNotFound() {
+void handleNotFound()
+{
   server.send(404, "text/plain", "Not found");
 }
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
 
   // Start Access Point
@@ -37,12 +40,15 @@ void setup() {
   Serial.println("DNS server started (wildcard -> " + ip.toString() + ")");
 
   // Start mDNS so the device is also reachable as "light-ring.local"
-  if (MDNS.begin(MDNS_HOSTNAME)) {
+  if (MDNS.begin(MDNS_HOSTNAME))
+  {
     MDNS.addService("http", "tcp", 80);
     Serial.print("mDNS started - open http://");
     Serial.print(MDNS_HOSTNAME);
     Serial.println(".local");
-  } else {
+  }
+  else
+  {
     Serial.println("mDNS failed to start");
   }
 
@@ -55,7 +61,8 @@ void setup() {
   Serial.println("Connect to Wi-Fi \"" + String(AP_SSID) + "\" and open http://light.ring");
 }
 
-void loop() {
+void loop()
+{
   dnsServer.processNextRequest();
   server.handleClient();
 }
